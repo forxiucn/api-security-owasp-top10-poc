@@ -79,13 +79,6 @@ cd java/2019/server
 - Go 客户端：`--addr` 现在必须包含协议（例如 `http://127.0.0.1:5019`），客户端直接将该值作为 base URL。
 - Java：POM 已修改为使用 Java 21，并为项目添加了 Maven wrapper（位于各 Java server 子目录），方便在没有系统 Maven 的环境下构建。
 
-## 进一步操作
-
-- 查看特定实现的详细说明，请进入对应子目录并阅读 `README.md`。
-- 需要我为你：
-	- 在 CI 中加入构建脚本（Go/Java）？
-	- 升级 Java Spring Boot 以确保与 Java 21 完整兼容？
-	- 运行端到端测试（启动某一服务并用 client 调用）并将输出返回？
 
 ---
 如有问题或建议，欢迎创建 issue 或提交 PR。
