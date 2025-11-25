@@ -1,4 +1,4 @@
-package main.java.org.example;
+package org.example;
 
 import org.springframework.web.bind.annotation.*;
 import java.util.*;

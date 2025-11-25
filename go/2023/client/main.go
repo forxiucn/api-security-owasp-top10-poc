@@ -3,14 +3,21 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
-const baseURL = "http://127.0.0.1:5023"
+var baseURL string
 
 func main() {
+	addr := flag.String("addr", "http://127.0.0.1:5023", "server address in format protocol://host:port or protocol://host:port/contentPath (e.g. http://127.0.0.1:5023/api)")
+	flag.Parse()
+
+	// addr is expected to include the protocol (e.g. http://127.0.0.1:5023)
+	baseURL = *addr
+
 	testApi1()
 	testApi2()
 	testApi3()
@@ -35,10 +42,12 @@ func testApi4() {
 	}
 }
 func testApi5() { getPrint("/api5/admin") }
-func testApi6() { postPrint("/api6/transfer", map[string]interface{}{"from": "alice", "to": "bob", "amount": 100}) }
-func testApi7() { postPrint("/api7/ssrf", map[string]interface{}{"url": "http://example.com"}) }
-func testApi8() { getPrint("/api8/debug") }
-func testApi9() { getPrint("/api9/old-api") }
+func testApi6() {
+	postPrint("/api6/transfer", map[string]interface{}{"from": "alice", "to": "bob", "amount": 100})
+}
+func testApi7()  { postPrint("/api7/ssrf", map[string]interface{}{"url": "http://example.com"}) }
+func testApi8()  { getPrint("/api8/debug") }
+func testApi9()  { getPrint("/api9/old-api") }
 func testApi10() { postPrint("/api10/unsafe", map[string]interface{}{"external": "data"}) }
 
 func getPrint(path string) {
