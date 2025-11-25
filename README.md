@@ -2,7 +2,7 @@
 
 本项目用于 API 安全能力验证与演示，覆盖 OWASP API Security Top 10（2019 & 2023），并提供多语言实现（Python、Java、Go）。通过可运行的示例服务端与客户端，便于安全测试、演示与教学。
 
-## 当前目录结构（已更新）
+## 当前目录结构
 
 ```text
 api-security-owasp-top10/
