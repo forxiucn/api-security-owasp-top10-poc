@@ -2,7 +2,12 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -46,6 +51,44 @@ func getJSON(client *http.Client, url string, token string) (*http.Response, []b
 	return resp, data, nil
 }
 
+// encryptWithPublicKey encrypts data with public key
+func encryptWithPublicKey(msg []byte, pub *rsa.PublicKey) ([]byte, error) {
+	return rsa.EncryptPKCS1v15(rand.Reader, pub, msg)
+}
+
+// getPublicKey retrieves the public key from the server
+func getPublicKey(client *http.Client, addr string) (*rsa.PublicKey, error) {
+	url := fmt.Sprintf("%s/flow/public-key", addr)
+	resp, data, err := getJSON(client, url, "")
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to get public key: %s", string(data))
+	}
+
+	var result map[string]interface{}
+	json.Unmarshal(data, &result)
+	
+	pubKeyPEM := result["publicKey"].(string)
+	block, _ := pem.Decode([]byte(pubKeyPEM))
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block containing the public key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	rsaPub, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("not an RSA public key")
+	}
+
+	return rsaPub, nil
+}
+
 func main() {
 	addr := flag.String("addr", "http://127.0.0.1:5060", "flow server base URL including protocol")
 	username := flag.String("username", "alice", "username")
@@ -60,11 +103,26 @@ func main() {
 	client := &http.Client{}
 	var token string
 
+	// Get public key from server
+	pubKey, err := getPublicKey(client, *addr)
+	if err != nil {
+		panic(err)
+	}
+
+	// Encrypt password with public key
+	encryptedPassword, err := encryptWithPublicKey([]byte(*password), pubKey)
+	if err != nil {
+		panic(err)
+	}
+
+	// Base64 encode the encrypted password for safe transmission over JSON
+	encodedPassword := base64.StdEncoding.EncodeToString(encryptedPassword)
+
 	// 1. Three-step login
-	// Step 1: Send credentials
+	// Step 1: Send encrypted credentials
 	step1URL := fmt.Sprintf("%s/flow/login-step1", *addr)
 	fmt.Println("POST", step1URL)
-	resp, data, err := postJSON(client, step1URL, map[string]string{"username": *username, "password": *password}, "")
+	resp, data, err := postJSON(client, step1URL, map[string]string{"username": *username, "encPassword": encodedPassword}, "")
 	if err != nil {
 		panic(err)
 	}

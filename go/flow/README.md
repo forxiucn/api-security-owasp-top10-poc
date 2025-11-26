@@ -7,14 +7,66 @@
 - **三步登录流程**：分离密码提交、SMS 请求、SMS 验证，提高安全性
 - **Bearer Token 认证**：使用 `Authorization` 请求头传递 token，而非 URL 查询参数
 - **请求体参数**：业务参数在 JSON 请求体中传递，提高 API 安全性
+- **非对称加密密码传输**：使用 RSA 非对称加密保护密码传输过程中的安全
 - **多阶段状态机**：转账流程需按顺序经过多个阶段（PIN 验证 → SMS 验证 → 提交）
+
+## 流程图
+
+```mermaid
+sequenceDiagram
+    participant C as 客户端
+    participant S as 服务端
+
+    %% 获取公钥
+    C->>S: GET /flow/public-key
+    S-->>C: 返回RSA公钥
+
+    %% 三步登录流程
+    C->>S: POST /flow/login-step1<br/>加密用户名和密码
+    S->>S: 解密并验证凭据
+    S-->>C: 返回loginSessionId
+
+    C->>S: POST /flow/login-step2<br/>请求SMS验证码
+    S->>S: 标记SMS已发送
+    S-->>C: 确认SMS已发送
+
+    C->>S: POST /flow/login-step3<br/>提交SMS验证码
+    S->>S: 验证SMS验证码
+    S-->>C: 返回认证token
+
+    %% 业务操作
+    C->>S: GET /flow/userinfo<br/>Authorization: Bearer token
+    S-->>C: 返回用户信息
+
+    C->>S: GET /flow/balance<br/>Authorization: Bearer token
+    S-->>C: 返回账户余额
+
+    C->>S: POST /flow/initiate-transfer<br/>Authorization: Bearer token
+    S-->>C: 返回transferId
+
+    C->>S: POST /flow/withdraw-pin<br/>Authorization: Bearer token
+    S->>S: 验证取款PIN
+    S-->>C: 确认PIN验证通过
+
+    C->>S: POST /flow/sms-code<br/>Authorization: Bearer token
+    S->>S: 验证SMS验证码
+    S-->>C: 确认SMS验证通过
+
+    C->>S: POST /flow/submit-transfer<br/>Authorization: Bearer token
+    S->>S: 执行转账操作
+    S-->>C: 确认转账完成
+
+    C->>S: GET /flow/balance<br/>Authorization: Bearer token
+    S-->>C: 返回更新后的账户余额
+```
 
 ## API 流程
 
 ### 登录流程（三步）
-1. `POST /flow/login-step1` - 提交账号密码，返回 `loginSessionId`
-2. `POST /flow/login-step2` - 请求短信验证码
-3. `POST /flow/login-step3` - 提交短信验证码，获得 `token`
+1. `GET /flow/public-key` - 获取服务器公钥用于加密密码
+2. `POST /flow/login-step1` - 提交账号和加密后的密码，返回 `loginSessionId`
+3. `POST /flow/login-step2` - 请求短信验证码
+4. `POST /flow/login-step3` - 提交短信验证码，获得 `token`
 
 ### 业务操作（需在请求头中包含 `Authorization: Bearer <token>`）
 1. `GET /flow/userinfo` - 获取用户信息
@@ -99,6 +151,7 @@ cd ../client
 | `--addr` | `http://127.0.0.1:5060` | 服务器地址 |
 | `--username` | `alice` | 登录用户名 |
 | `--password` | `secret` | 登录密码 |
+| `--password` | `secret` | 登录密码 |
 | `--to` | `bob` | 转账目标用户 |
 | `--amount` | `100.0` | 转账金额 |
 | `--query-pin` | `1234` | 查询 PIN（留空则跳过） |
@@ -110,6 +163,7 @@ cd ../client
 - **认证方式**：三步登录避免在单个请求中暴露密码，符合生产环境最佳实践
 - **Token 传递**：使用标准 `Authorization: Bearer <token>` 请求头，而非 URL 查询参数
 - **参数传递**：敏感业务参数在请求体中，而非 URL 中，提高安全性
+- **密码加密传输**：使用 RSA 非对称加密算法保护密码在传输过程中的安全
 - **状态管理**：内存中维护登录会话和转账状态，便于演示和调试
 - **验证码/PIN**：使用固定值（000000、1234、2345），仅用于演示目的
 

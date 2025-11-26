@@ -1,6 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"sync"
@@ -39,6 +44,20 @@ var trCounter = 0
 
 var loginCounter = 0
 
+// RSA keys
+var privateKey *rsa.PrivateKey
+var publicKey *rsa.PublicKey
+
+// Initialize RSA keys
+func init() {
+	var err error
+	privateKey, err = rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic(err)
+	}
+	publicKey = &privateKey.PublicKey
+}
+
 // Helper: extract Authorization header token
 func getToken(c *gin.Context) string {
 	auth := c.GetHeader("Authorization")
@@ -63,18 +82,52 @@ func getUser(c *gin.Context) (string, bool) {
 func main() {
 	r := gin.Default()
 
-	// Step 1: Initiate login with credentials (returns loginSessionId)
+	// Endpoint to get public key
+	r.GET("/flow/public-key", func(c *gin.Context) {
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to marshal public key"})
+			return
+		}
+		
+		pubKeyPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: pubKeyBytes,
+		})
+		
+		c.JSON(http.StatusOK, gin.H{
+			"publicKey": string(pubKeyPEM),
+		})
+	})
+
+	// Step 1: Initiate login with encrypted credentials (returns loginSessionId)
 	r.POST("/flow/login-step1", func(c *gin.Context) {
 		var body struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
+			Username    string `json:"username"`
+			EncPassword string `json:"encPassword"` // Encrypted password
 		}
 		if err := c.BindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 			return
 		}
+		
+		// Base64 decode the encrypted password
+		encData, err := base64.StdEncoding.DecodeString(body.EncPassword)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "decryption failed"})
+			return
+		}
+		
+		// Decrypt password
+		passwordBytes, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, []byte(encData))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "decryption failed"})
+			return
+		}
+		password := string(passwordBytes)
+		
 		// Simple auth: alice / secret
-		if body.Username != "alice" || body.Password != "secret" {
+		if body.Username != "alice" || password != "secret" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 			return
 		}
