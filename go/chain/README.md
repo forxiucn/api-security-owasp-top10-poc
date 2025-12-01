@@ -12,22 +12,53 @@
 
 默认 server 监听端口 `5050`。可以在启动客户端时通过 `--addr` 指定服务地址（必须包含协议）。
 
-编译示例：
+### 交叉编译示例
+
 ```bash
-# server
-cd go/chain/server
+# Server
+cd server
 go mod download
-go build -o chain-server .
+## macOS Apple Silicon（ARM64）
+GOOS=darwin GOARCH=arm64 go build -o chain_server_mac_arm64 .
 
-# ordered client
-cd ../client/ordered
-go mod download
-go build -o ordered-client .
+## macOS Intel（amd64）
+GOOS=darwin GOARCH=amd64 go build -o chain_server_mac_amd64 .
 
-# unordered client
-cd ../unordered
+## Linux
+GOOS=linux GOARCH=amd64 go build -o chain_server_linux_amd64 .
+
+## Windows
+GOOS=windows GOARCH=amd64 go build -o chain_server_amd64.exe .
+
+# Client Ordered
+cd client/ordered
 go mod download
-go build -o unordered-client .
+## macOS Apple Silicon（ARM64）
+GOOS=darwin GOARCH=arm64 go build -o chain_client_ordered_mac_arm64 .
+
+## macOS Intel（amd64）
+GOOS=darwin GOARCH=amd64 go build -o chain_client_ordered_mac_amd64 .
+
+## Linux
+GOOS=linux GOARCH=amd64 go build -o chain_client_ordered_linux_amd64 .
+
+## Windows
+GOOS=windows GOARCH=amd64 go build -o chain_client_ordered_amd64.exe .
+
+# Client unordered
+cd client/unordered
+go mod download
+## macOS Apple Silicon（ARM64）
+GOOS=darwin GOARCH=arm64 go build -o chain_client_unordered_mac_arm64 .
+
+## macOS Intel（amd64）
+GOOS=darwin GOARCH=amd64 go build -o chain_client_unordered_mac_amd64 .
+
+## Linux
+GOOS=linux GOARCH=amd64 go build -o chain_client_unordered_linux_amd64 .
+
+## Windows
+GOOS=windows GOARCH=amd64 go build -o chain_client_unordered_amd64.exe .
 ```
 
 运行示例：

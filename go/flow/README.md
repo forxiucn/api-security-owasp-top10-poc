@@ -79,6 +79,40 @@ sequenceDiagram
 
 ## 快速开始
 
+### 交叉编译示例
+
+```bash
+# 编译服务端
+cd go/flow/server
+go mod download
+# macOS Apple Silicon（ARM64）
+GOOS=darwin GOARCH=arm64 go build -o flow_server_mac_arm64 .
+
+# macOS Intel（amd64）
+GOOS=darwin GOARCH=amd64 go build -o flow_server_mac_amd64 .
+
+# Linux
+GOOS=linux GOARCH=amd64 go build -o flow_server_linux_amd64 .
+
+# Windows
+GOOS=windows GOARCH=amd64 go build -o flow_server_amd64.exe .
+
+# 编译客户端
+cd ../client
+go mod download
+# macOS Apple Silicon（ARM64）
+GOOS=darwin GOARCH=arm64 go build -o flow_client_mac_arm64 .
+
+# macOS Intel（amd64）
+GOOS=darwin GOARCH=amd64 go build -o flow_client_mac_amd64 .
+
+# Linux
+GOOS=linux GOARCH=amd64 go build -o flow_client_linux_amd64 .
+
+# Windows
+GOOS=windows GOARCH=amd64 go build -o flow_client_amd64.exe .
+```
+
 ### 编译
 
 ```bash

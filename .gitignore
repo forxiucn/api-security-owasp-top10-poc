@@ -4,3 +4,13 @@ target/
 *.tmp
 .DS_Store
 go.sum
+go/2023/server/2023_server_linux_amd64
+go/2023/server/2023_server_mac_arm64
+go/chain/client/ordered/chain_client_ordered_linux_amd64
+go/chain/client/ordered/chain_client_ordered_mac_arm64
+go/chain/client/unordered/chain_client_unordered_linux_amd64
+go/chain/client/unordered/chain_client_unordered_mac_arm64
+go/flow/client/flow_client_linux_amd64
+go/flow/client/flow_client_mac_arm64
+go/flow/server/flow_server_linux_amd64
+go/flow/server/flow_server_mac_arm64
